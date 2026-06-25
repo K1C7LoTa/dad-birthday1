@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Письмо для папы</title>
+<style>
+  :root{
+    --bg-deep:#1a1330;
+    --bg-mid:#3a2360;
+    --accent-orange:#ff9d5c;
+    --accent-gold:#ffd07a;
+    --glass: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.18);
+
+    --mail-blue:#1a73e8;
+    --mail-bg:#f6f8fc;
+    --mail-text:#202124;
+    --mail-sub:#5f6368;
+    --mail-border:#e3e6ea;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    width:100%;height:100%;
+    overflow:hidden;
+    font-family:'Georgia','Times New Roman',serif;
+    background:radial-gradient(circle at 50% 0%, var(--bg-mid), var(--bg-deep) 70%);
+    color:#fff;
+  }
+  #app{
+    position:relative;
+    width:100%;
+    height:100vh;
+    max-width:480px;
+    margin:0 auto;
+    overflow:hidden;
+    background:var(--bg-deep);
+  }
+  .screen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:30px 22px;
+    text-align:center;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .5s ease;
+    overflow-y:auto;
+  }
+  .screen.active{ opacity:1; pointer-events:auto; }
+  h1,h2,h3{
+    font-family:'Playfair Display','Georgia',serif;
+    font-weight:700;
+    margin:0 0 16px 0;
+  }
+  .eyebrow{
+    font-family:'Courier New', monospace;
+    font-size:14px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--accent-gold);
+    opacity:0.9;
+    margin-bottom:12px;
+  }
+  p{ line-height:1.6; margin:0 0 16px 0; font-size:19px; }
+  .btn{
+    min-height:58px;
+    padding:0 36px;
+    border-radius:34px;
+    border:1px solid var(--glass-border);
+    background:linear-gradient(135deg, var(--accent-orange), var(--accent-gold));
+    color:#2a1a05;
+    font-weight:700;
+    font-size:19px;
+    font-family:'Georgia',serif;
+    cursor:pointer;
+    box-shadow:0 10px 28px rgba(255,157,92,0.4);
+    margin:10px;
+  }
+  .btn:active{ transform:scale(0.96); }
+  .btn-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:10px; }
+  #s1 .icon{ font-size:70px; margin-bottom:10px; }
+
+  /* ===== GMAIL-STYLE INBOX SCREEN ===== */
+  #s2, #s3{
+    padding:0;
+    justify-content:flex-start;
+    align-items:stretch;
+    background:var(--mail-bg);
+    color:var(--mail-text);
+    font-family:'Roboto','Segoe UI','Helvetica Neue',Arial,sans-serif;
+    text-align:left;
+  }
+  .mail-topbar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 16px;
+    background:#fff;
+    border-bottom:1px solid var(--mail-border);
+    flex-shrink:0;
+  }
+  .mail-topbar .hamburger{ font-size:20px; color:var(--mail-sub); }
+  .mail-search{
+    flex:1;
+    background:var(--mail-bg);
+    border-radius:24px;
+    height:40px;
+    display:flex;
+    align-items:center;
+    padding:0 16px;
+    color:var(--mail-sub);
+    font-size:15px;
+    gap:8px;
+  }
+  .mail-avatar{
+    width:32px;height:32px;border-radius:50%;
+    background:linear-gradient(135deg,#ff9d5c,#ffd07a);
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px; color:#2a1a05; font-weight:700;
+    flex-shrink:0;
+  }
+  .mail-tabs{
+    display:flex;
+    gap:0;
+    padding:0 8px;
+    background:#fff;
+    border-bottom:1px solid var(--mail-border);
+    flex-shrink:0;
+  }
+  .mail-tab{
+    padding:12px 14px;
+    font-size:14px;
+    color:var(--mail-sub);
+    font-weight:500;
+    border-bottom:3px solid transparent;
+  }
+  .mail-tab.active{ color:var(--mail-blue); border-bottom-color:var(--mail-blue); font-weight:700; }
+  .mail-list{
+    flex:1;
+    overflow-y:auto;
+    background:#fff;
+    position:relative;
+  }
+  .empty-inbox{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+    color:var(--mail-sub);
+    gap:10px;
+    padding:40px 24px;
+  }
+  .empty-inbox .big-icon{ font-size:54px; opacity:0.6; }
+  .empty-inbox .t1{ font-size:17px; font-weight:500; color:#3c4043; }
+  .empty-inbox .t2{ font-size:14px; }
+  .mail-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:14px 16px;
+    border-bottom:1px solid #f1f3f4;
+    opacity:0;
+    transform:translateY(-14px);
+    animation:rowIn .5s ease forwards;
+  }
+  @keyframes rowIn{ to{ opacity:1; transform:translateY(0); } }
+  .mail-row .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--mail-blue);
+    margin-top:8px;
+    flex-shrink:0;
+  }
+  .mail-row .mr-avatar{
+    width:38px;height:38px;border-radius:50%;
+    background:linear-gradient(135deg,#ff9d5c,#ffd07a);
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;
+    flex-shrink:0;
+  }
+  .mail-row .mr-body{ flex:1; min-width:0; }
+  .mail-row .mr-top{ display:flex; justify-content:space-between; gap:8px; }
+  .mail-row .mr-sender{ font-size:15px; font-weight:700; color:#202124; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mail-row .mr-time{ font-size:12.5px; color:var(--mail-sub); flex-shrink:0; }
+  .mail-row .mr-subject{ font-size:14.5px; font-weight:700; color:#202124; margin-top:2px; }
+  .mail-row .mr-snippet{ font-size:14px; color:var(--mail-sub); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mail-row:active{ background:#f6f8fc; }
+  .loading-pill{
+    display:flex; align-items:center; gap:10px;
+    padding:14px 16px;
+    font-size:13.5px;
+    color:var(--mail-sub);
+  }
+  .spinner-sm{
+    width:16px;height:16px;
+    border:2.5px solid #e3e6ea;
+    border-top-color:var(--mail-blue);
+    border-radius:50%;
+    animation:spin 0.9s linear infinite;
+    flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ===== EMAIL DETAIL VIEW (s3) ===== */
+  .mail-detail-top{
+    display:flex; align-items:center; gap:18px;
+    padding:14px 16px;
+    background:#fff;
+    border-bottom:1px solid var(--mail-border);
+    flex-shrink:0;
+  }
+  .back-arrow{ font-size:22px; color:var(--mail-sub); }
+  .mail-detail-body{
+    flex:1;
+    overflow-y:auto;
+    background:#fff;
+    padding:18px 18px 40px 18px;
+  }
+  .mail-subject-line{
+    font-size:21px;
+    font-weight:600;
+    color:#202124;
+    margin-bottom:18px;
+    line-height:1.35;
+  }
+  .mail-from-row{
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:22px;
+  }
+  .mail-from-avatar{
+    width:40px;height:40px;border-radius:50%;
+    background:linear-gradient(135deg,#ff9d5c,#ffd07a);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px; flex-shrink:0;
+  }
+  .mail-from-name{ font-size:15px; font-weight:700; color:#202124; }
+  .mail-from-meta{ font-size:13px; color:var(--mail-sub); }
+  .mail-body-text{
+    font-size:18px;
+    line-height:1.7;
+    color:#202124;
+    font-family:'Georgia',serif;
+  }
+  .mail-body-text p{ font-size:18px; margin:0 0 16px 0; color:#202124; }
+  .code-block{
+    background:#1e1530;
+    color:#7fffa0;
+    font-family:'Courier New', monospace;
+    font-size:15px;
+    border-radius:12px;
+    padding:18px;
+    text-align:left;
+    margin:18px 0;
+    white-space:pre;
+    overflow-x:auto;
+  }
+  .caret{
+    display:inline-block; width:3px; height:1.1em;
+    background:#202124; vertical-align:-3px;
+    animation:caretBlink 0.9s steps(1) infinite;
+  }
+  @keyframes caretBlink{ 50%{ opacity:0; } }
+  .mail-sign{ margin-top:6px; font-style:italic; text-align:right; font-size:17px; color:#202124; }
+  .next-hint{ margin-top:26px; text-align:center; }
+
+  /* ===== FINALE ===== */
+  #s4 h1{
+    font-size:36px;
+    background:linear-gradient(135deg,var(--accent-orange),var(--accent-gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #s4 p{ font-size:21px; }
+  .cake{ font-size:72px; margin-bottom:14px; }
+  canvas#confetti{ position:absolute; inset:0; pointer-events:none; z-index:5; }
+  .fade-up{ opacity:0; transform:translateY(14px); animation:fadeUp .8s ease forwards; }
+  @keyframes fadeUp{ to{ opacity:1; transform:translateY(0); } }
+  .delivered-tag{
+    font-family:'Courier New',monospace; font-size:13px; letter-spacing:3px;
+    color:#7fffa0; border:1.5px solid #7fffa0; border-radius:8px;
+    padding:6px 14px; text-transform:uppercase; margin-bottom:18px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN 1 -->
+  <section class="screen active" id="s1">
+    <div class="icon">📮</div>
+    <div class="eyebrow">Почтовый сервис · Уведомление</div>
+    <h1>У вас сегодня день рождения?</h1>
+    <p>Подтвердите получателя, чтобы мы открыли ваш почтовый ящик.</p>
+    <div class="btn-row">
+      <button class="btn" onclick="goTo('s2')">Да</button>
+      <button class="btn" onclick="goTo('s2')">Да, конечно</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: INBOX -->
+  <section class="screen" id="s2">
+    <div class="mail-topbar">
+      <span class="hamburger">☰</span>
+      <div class="mail-search">🔍 Почта</div>
+      <div class="mail-avatar">П</div>
+    </div>
+    <div class="mail-tabs">
+      <div class="mail-tab active">Входящие</div>
+      <div class="mail-tab">Соцсети</div>
+      <div class="mail-tab">Промоакции</div>
+    </div>
+    <div class="mail-list" id="mailList">
+      <div class="empty-inbox" id="emptyInbox">
+        <div class="big-icon">📭</div>
+        <div class="t1">Входящие пусты</div>
+        <div class="t2">Новых писем пока нет</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: EMAIL DETAIL -->
+  <section class="screen" id="s3">
+    <div class="mail-detail-top">
+      <span class="back-arrow" onclick="goTo('s2')">←</span>
+      <span style="font-size:14px; color:var(--mail-sub);">Входящие</span>
+    </div>
+    <div class="mail-detail-body">
+      <div class="mail-subject-line">Для самого лучшего папы ❤️</div>
+      <div class="mail-from-row">
+        <div class="mail-from-avatar">👶</div>
+        <div>
+          <div class="mail-from-name">Ваш ребёнок</div>
+          <div class="mail-from-meta">кому: Папа · только что</div>
+        </div>
+      </div>
+      <div class="mail-body-text" id="typewriterTarget"></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 4: FINALE -->
+  <section class="screen" id="s4">
+    <canvas id="confetti"></canvas>
+    <div class="delivered-tag fade-up">Письмо доставлено</div>
+    <div class="cake fade-up">🎂</div>
+    <h1 class="fade-up" style="animation-delay:.2s">С ДНЁМ РОЖДЕНИЯ, ПАПА</h1>
+    <p class="fade-up" style="animation-delay:.5s;">Ты лучший человек в моей жизни.</p>
+    <p class="fade-up" style="animation-delay:.8s;">Спасибо за всё ❤️</p>
+  </section>
+
+</div>
+
+<script>
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s2') startInbox();
+  if(id==='s3') openLetter();
+  if(id==='s4') startConfetti();
+}
+
+function startInbox(){
+  const list = document.getElementById('mailList');
+  // show a loading pill briefly, then replace empty state with the new mail row
+  setTimeout(()=>{
+    list.innerHTML = '<div class="loading-pill"><div class="spinner-sm"></div>Проверка новых писем...</div>';
+  }, 500);
+
+  setTimeout(()=>{
+    list.innerHTML = `
+      <div class="mail-row" onclick="goTo('s3')">
+        <div class="dot"></div>
+        <div class="mr-avatar">👶</div>
+        <div class="mr-body">
+          <div class="mr-top">
+            <div class="mr-sender">Ваш ребёнок</div>
+            <div class="mr-time">только что</div>
+          </div>
+          <div class="mr-subject">Для самого лучшего папы ❤️</div>
+          <div class="mr-snippet">Пап, это письмо для тебя. Я хотел сделать тебе...</div>
+        </div>
+      </div>`;
+    playBeep(880,0.1,0.1);
+  }, 2400);
+}
+
+// --- Typewriter letter content ---
+const letterHTML = [
+  {t:'p', text:'Пап, это письмо для тебя ❤️'},
+  {t:'p', text:'Я хотел сделать тебе маленький сюрприз.'},
+  {t:'p', text:'Спасибо за всё, что ты делаешь.'},
+  {t:'p', text:'Ты всегда рядом и поддерживаешь.'},
+  {t:'p', text:'Ты мой пример и опора.'},
+  {t:'p', text:'Я не всегда это говорю, но я очень тебя ценю.'},
+  {t:'code', text:`if (dad == best) {
+    love = true;
+    respect = infinite;
+}`},
+  {t:'sign', text:'— твой(я) ребёнок'}
+];
+
+function openLetter(){
+  const target = document.getElementById('typewriterTarget');
+  target.innerHTML = '';
+  let blockIndex = 0;
+
+  function typeBlock(){
+    if(blockIndex >= letterHTML.length){
+      const hint = document.createElement('div');
+      hint.className = 'next-hint';
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = 'Дальше →';
+      btn.onclick = ()=>goTo('s4');
+      hint.appendChild(btn);
+      target.appendChild(hint);
+      return;
+    }
+    const block = letterHTML[blockIndex];
+    let el;
+    if(block.t === 'code'){ el = document.createElement('div'); el.className = 'code-block'; }
+    else if(block.t === 'sign'){ el = document.createElement('div'); el.className = 'mail-sign'; }
+    else { el = document.createElement('p'); }
+    const caret = document.createElement('span');
+    caret.className = 'caret';
+    target.appendChild(el);
+    target.appendChild(caret);
+
+    let i = 0;
+    const text = block.text;
+    const speed = block.t === 'code' ? 12 : 28;
+    function step(){
+      if(i <= text.length){
+        el.textContent = text.slice(0, i);
+        i++;
+        setTimeout(step, speed);
+      } else {
+        caret.remove();
+        blockIndex++;
+        setTimeout(typeBlock, 280);
+      }
+    }
+    step();
+  }
+  typeBlock();
+}
+
+function playBeep(freq, duration, vol){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.value = vol || 0.05;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (duration || 0.1));
+    osc.stop(ctx.currentTime + (duration || 0.1) + 0.05);
+  }catch(e){}
+}
+
+function startConfetti(){
+  playBeep(523,0.1,0.07);
+  setTimeout(()=>playBeep(659,0.1,0.07), 120);
+  setTimeout(()=>playBeep(784,0.15,0.07), 240);
+
+  const canvas = document.getElementById('confetti');
+  const app = document.getElementById('app');
+  canvas.width = app.clientWidth;
+  canvas.height = app.clientHeight;
+  const ctx = canvas.getContext('2d');
+  const colors = ['#ff9d5c','#ffd07a','#7fffa0','#ff7ab8','#7ab8ff'];
+  let particles = [];
+  for(let i=0;i<90;i++){
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: -20 - Math.random()*canvas.height,
+      r: 4 + Math.random()*5,
+      c: colors[Math.floor(Math.random()*colors.length)],
+      vy: 2 + Math.random()*3,
+      vx: -1 + Math.random()*2,
+      rot: Math.random()*360,
+      vr: -4 + Math.random()*8
+    });
+  }
+  let frame = 0;
+  function loop(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.y += p.vy; p.x += p.vx; p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*1.6);
+      ctx.restore();
+    });
+    if(frame < 420) requestAnimationFrame(loop);
+  }
+  loop();
+}
+</script>
+</body>
+</html>
